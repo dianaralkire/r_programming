@@ -1,0 +1,73 @@
+---
+title: "Day 3 Practice"
+output: html_document
+---
+
+1. Make a "copy" of the `iris` data set in your workspace. Use `summary()` on it, identify a factor column.
+
+```{r}
+copy <- iris
+summary(copy)
+# Species is a factor
+```
+
+2. Create different versions of the factor column, in the new data set:
+   a. a numeric vector with `as.numeric()`
+   b. a character vector
+   
+```{r}
+copy$species.num <- as.numeric(copy$Species)
+copy$species.char <- as.character(copy$Species)
+```
+
+3. Use `xtabs()` to see how the values in these new columns line up with the original factor column.
+
+```{r}
+xtabs(~ Species + species.num + species.char, copy)
+```
+
+4. Check the order of levels of Species with `levels()`. Create a new column from this factor, changing the order of the levels, using:
+  a. `relevel()`
+  b. `reorder()`
+  c. `factor()`
+
+```{r}
+levels(copy$Species)
+
+# a.
+copy$factorA <- relevel(copy$Species, "versicolor")
+levels(copy$factorA)
+
+# b.
+copy$speciesOrder[copy$Species == "setosa"] <- 3
+copy$speciesOrder[copy$Species == "versicolor"] <- 2
+copy$speciesOrder[copy$Species == "virginica"] <- 1
+copy$factorB <- reorder(copy$Species, copy$speciesOrder)
+levels(copy$factorB)
+
+# c. 
+copy$factorC <- copy$Species
+copy$factorC <- factor(copy$factorC, levels = c("versicolor", "setosa", "virginica"))
+levels(copy$factorC)
+```
+
+5. Working with missing values
+   - read in the data from "CognitionPaperModifiedData.csv"
+   - locate NAs
+   - display the rows of the data frame where the WithinMinPairs variable has missing values
+   - create a new column that's a copy of the WithinMinPairs column
+   - replace all missing values in this column with zeros
+   - use `xtabs()` to check this change in coding *ignore; doesn't actually help; figure out another way to check*
+
+```{r}
+scottdata <- read.csv("../scottdata/CognitionPaperModifiedData.csv")
+is.na(scottdata)
+missing <- which(is.na(scottdata$WithinMinPairs))
+missing
+scottdata$WithinMinPairs.copy <- scottdata$WithinMinPairs
+scottdata$WithinMinPairs.copy <- replace(scottdata$WithinMinPairs.copy, missing, 0)
+
+#check coding change
+scottdata$WithinMinPairs.copy[missing]
+```
+
