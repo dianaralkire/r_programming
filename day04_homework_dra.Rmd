@@ -1,0 +1,83 @@
+---
+title: "Day 4 Homework"
+output: html_document
+---
+
+1. Find some aspect of your data that needs to be combined or merged in some way.  This could be a variety of things:
+  - multiple "sheets" in an Excel
+  - multiple files that should be combined into one data set
+  - properties that need to be merged in to one data set. For example:
+    - you have a table of subject properties (gender, handedness, etc.) that need to be merged into the item-level data
+    - you have other information on countries (population, etc.) that need to be merged in
+  - if you DON'T have this naturally-occurring issue, figure out a way to manufacture it. For example:
+    - split up your data into chunks
+    - make up some new table of information that you want to merge in
+  - Explain (in words) what you are trying to do
+  - Use binding/merging commands to accomplish this
+
+
+### Reading in data from Excel file with multiple sheets
+
+I'm applying the read_excel function to each of the sheets separately. This creates a separate data frame from each sheet. 
+```{r}
+library(readxl)
+path <- "data_reformat.xlsx"
+kbit <- read_excel(path, "KBIT")
+mindeyes <- read_excel(path, "Mind in Eyes")
+stories.transcript <- read_excel(path, "Transcript")
+stories.scores <- read_excel(path, "Strange Stories Scores")
+ToM <- read_excel(path, "TOM Inventory")
+age.gender <- read_excel(path, "Age_Gender")
+```
+
+### Selecting and renaming columns from each data frame 
+
+Not all of the columns in each data frame are useful, so next I will select only the columns I care about from each. I will also rename the columns using colnames to be more descriptive of the variable, as this info will be lost once the sheets are merged.
+```{r}
+kbit <- kbit[, c(1, 5:7)]
+colnames(kbit) <- c("Subject ID","Verbal IQ","Nonverbal IQ","Full IQ")  
+
+mindeyes <- mindeyes[, c(1, 4)]
+colnames(mindeyes) <- c("Subject ID", "Mind in Eyes (% correct)")
+
+# all columns of age.gender are relevant
+colnames(age.gender) <- c("Subject ID", "Age", "Gender")
+
+# all columns of stories.transcript are relevant
+# using paste function to append "Transcript" to "Story 1" etc.
+colnames(stories.transcript) <- c("Subject ID", paste(colnames(stories.transcript)[-1], "Transcript"))
+
+# all columns of stories.scores are relevant
+# using paste function to append "Score" to "Story 1" etc.
+colnames(stories.scores) <- c("Subject ID", paste(colnames(stories.scores)[-c(1, 13)], "Score"), "Strange Stories Total Score")
+
+ToM <- ToM[c("Participant ID", "Mean")]
+colnames(ToM) <- c("Subject ID", "ToM Inventory (Mean)")
+```
+
+### Factorizing variables
+
+Next I will use as.factor to coerce two of the variables into factors. The "Gender" column of age.gender was read in as characters. The individual story scores from stories.scores were read in as numbers, but the scores are really on an ordinal scale (0, 1, 2), so I want to treat them as factors instead of continuous numbers.
+```{r}
+age.gender$Gender <- as.factor(age.gender$Gender) 
+
+stories.scores[2:12] <- lapply(stories.scores[2:12], as.factor)
+```
+
+
+### Merging data frames
+
+Lastly I will use the merge function to merge the separate data frames two at a time. 
+```{r}
+merge1 <- merge(age.gender, kbit)
+merge2 <- merge(merge1, mindeyes)
+merge3 <- merge(merge2, ToM)
+merge4 <- merge(merge3, stories.scores)
+mydata <- merge(merge4, stories.transcript)
+
+mydata[, 1:20]
+summary(mydata)
+```
+
+
+
