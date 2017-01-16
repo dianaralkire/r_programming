@@ -1,0 +1,87 @@
+---
+title: "Day 5 Homework"
+output: html_document
+---
+
+0. Reload your data, and re-use the code you already have for getting things formatted nicely (columns renamed, factors relabeled, etc.)
+
+```{r}
+library(readxl)
+path <- "data_reformat.xlsx"
+kbit <- read_excel(path, "KBIT")
+mindeyes <- read_excel(path, "Mind in Eyes")
+stories.transcript <- read_excel(path, "Transcript")
+stories.scores <- read_excel(path, "Strange Stories Scores")
+ToM <- read_excel(path, "TOM Inventory")
+age.gender <- read_excel(path, "Age_Gender")
+
+kbit <- kbit[, c(1, 5:7)]
+colnames(kbit) <- c("Subject ID","Verbal IQ","Nonverbal IQ","Full IQ")  
+
+mindeyes <- mindeyes[, c(1, 4)]
+colnames(mindeyes) <- c("Subject ID", "Mind in Eyes (% correct)")
+
+colnames(age.gender) <- c("Subject ID", "Age", "Gender")
+
+colnames(stories.transcript) <- c("Subject ID", paste(colnames(stories.transcript)[-1], "Transcript"))
+
+colnames(stories.scores) <- c("Subject ID", paste(colnames(stories.scores)[-c(1, 13)], "Score"), "Strange Stories Total Score")
+
+ToM <- ToM[c("Participant ID", "Mean")]
+colnames(ToM) <- c("Subject ID", "ToM Inventory (Mean)")
+
+age.gender$Gender <- as.factor(age.gender$Gender) 
+
+stories.scores[2:12] <- lapply(stories.scores[2:12], as.factor)
+
+merge1 <- merge(age.gender, kbit)
+merge2 <- merge(merge1, mindeyes)
+merge3 <- merge(merge2, ToM)
+merge4 <- merge(merge3, stories.scores)
+mydata <- merge(merge4, stories.transcript)
+```
+
+1. Aggregate (e.g., get mean/median/max/something) of some numerical variable, over one or more factors.  Use `group_by()` plus `summarize()` from the `dplyr` package.
+
+```{r}
+library(dplyr)
+
+group_by(mydata, Gender) %>% summarize(mean.ToM = mean(`ToM Inventory (Mean)`))
+```
+
+2. Run TWO DIFFERENT simple analyses or statistical tests, such as linear regression (`lm()`), logistic regression (`glm()`), correlation test (`cor.test()`), t-test (`t.test()`), or non-parametric tests (e.g., `wilcox.test()`).  For each of these:
+  - Describe why you are doing this analysis, i.e., what question is it answering?
+  - I won't judge you on statistical expertise!  (though I will make comments if I think I can be helpful)
+  - Report some key statistics from the analysis, using **inline** code. HINT: outside of an R code chunk, use `r codehere format.
+  
+### Analysis 1: Correlation 
+*Is ToM Inventory (parent report of child's theory of mind abilities) significantly correlated with Mind in Eyes accuracy (child's ability to identify emotional expressions from pictures of eyes)?*
+```{r}
+my.cor <- cor.test(mydata$`Mind in Eyes (% correct)`, mydata$`ToM Inventory (Mean)`)
+my.cor
+my.r <- my.cor$estimate
+my.p1 <- my.cor$p.value
+```
+**The correlation coefficient between ToM Inventory and Mind in Eyes accuracy is `r my.r` and is marginally significant (p = `r my.p1`).**
+
+### Analysis 2: Linear Regression
+*How much of the variance of ToM Inventory is explained by a linear model that includes Mind in Eyes, Strange Stories Total Score, and Full IQ as predictors?*
+```{r}
+myfit <- lm(`ToM Inventory (Mean)` ~ `Mind in Eyes (% correct)` + `Strange Stories Total Score` + `Full IQ`, mydata)
+myresult <- summary(myfit)
+myresult
+my.r.squared <- myresult$r.squared
+```
+**The linear regression model that includes Mind in Eyes, Strange Stories Total Score, and Full IQ as predictors accounts for `r my.r.squared` of the variance in ToM Inventory.**
+
+
+3. Get your data into "long" format, at least with some variables.  This will help with some of the following questions.
+
+```{r}
+library(tidyr)
+
+mydata.IQ.long <- gather(mydata[, c("Subject ID", "Age", "Gender", "Verbal IQ", "Nonverbal IQ", "Full IQ")], IQ.Type, IQ.Score, `Verbal IQ`:`Full IQ`)
+
+head(mydata.IQ.long)
+```
+
