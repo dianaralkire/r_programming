@@ -1,0 +1,157 @@
+---
+title: "Day 5 Homework"
+output: html_document
+---
+
+0. Reload your data, and re-use the code you already have for getting things formatted nicely (columns renamed, factors relabeled, etc.)
+
+```{r}
+library(readxl)
+path <- "data_reformat.xlsx"
+kbit <- read_excel(path, "KBIT")
+mindeyes <- read_excel(path, "Mind in Eyes")
+stories.transcript <- read_excel(path, "Transcript")
+stories.scores <- read_excel(path, "Strange Stories Scores")
+ToM <- read_excel(path, "TOM Inventory")
+age.gender <- read_excel(path, "Age_Gender")
+
+kbit <- kbit[, c(1, 5:7)]
+colnames(kbit) <- c("Subject ID","Verbal IQ","Nonverbal IQ","Full IQ")  
+
+mindeyes <- mindeyes[, c(1, 4)]
+colnames(mindeyes) <- c("Subject ID", "Mind in Eyes (% correct)")
+
+colnames(age.gender) <- c("Subject ID", "Age", "Gender")
+
+colnames(stories.transcript) <- c("Subject ID", paste(colnames(stories.transcript)[-1], "Transcript"))
+
+colnames(stories.scores) <- c("Subject ID", paste(colnames(stories.scores)[-c(1, 13)], "Score"), "Strange Stories Total Score")
+
+ToM <- ToM[c("Participant ID", "Mean")]
+colnames(ToM) <- c("Subject ID", "ToM")
+
+age.gender$Gender <- as.factor(age.gender$Gender) 
+
+stories.scores[2:12] <- lapply(stories.scores[2:12], as.factor)
+
+merge1 <- merge(age.gender, kbit)
+merge2 <- merge(merge1, mindeyes)
+merge3 <- merge(merge2, ToM)
+merge4 <- merge(merge3, stories.scores)
+mydata <- merge(merge4, stories.transcript)
+```
+
+1. Pick a single numerical variable from your data.  Use `ggplot` to plot a histogram and a density plot (separately).
+   - Try some different values for `binwidth` for the histogram.
+   - Try some different values for `adjust` for the density plot.
+
+```{r}
+ggplot(mydata, aes(ToM)) + geom_histogram(binwidth = 1)
+ggplot(mydata, aes(ToM)) + geom_histogram(binwidth = .5)
+ggplot(mydata, aes(ToM)) + geom_histogram(binwidth = .1)
+
+ggplot(mydata, aes(ToM)) + geom_density(adjust = 1)
+ggplot(mydata, aes(ToM)) + geom_density(adjust = .5)
+ggplot(mydata, aes(ToM)) + geom_density(adjust = .1)
+```
+
+2. How does the distribution look?  Try transforming the variable and try to get it to look more normal (i.e., more Gaussian).  If it already looks normal, do something to it to make it look non-normal.
+
+```{r}
+# the distribution looks negatively skewed
+
+ggplot(mydata, aes(sqrt(ToM))) + geom_histogram(binwidth = .1)
+ggplot(mydata, aes(log(ToM))) + geom_histogram(binwidth = .05)
+ggplot(mydata, aes((ToM)^2)) + geom_histogram(binwidth = 10)
+
+# not able to make normal
+```
+
+3. Is there a factor that you can use to break up this variable into groups of observations?  If not, reshape your data so that there is, or create a factor if necessary.  Then, do the following:
+   - Plot it as a density plot, mapping `color` to the factor
+   - Same, but try using `fill` instead of `color`
+   - Same, using `linetype` instead of `color`
+   - Plot the data as a boxplot, with the factor as `x` and the numerical variable as `y`  HINT: use geom_boxplot
+
+```{r}
+# Creating factor "age.group"
+mydata$age.group[mydata$Age < 9] <- "Youngest"
+mydata$age.group[mydata$Age >= 9 & mydata$Age <= 11.5] <- "Middle"
+mydata$age.group[mydata$Age > 11.5] <- "Oldest"
+mydata$age.group <- factor(mydata$age.group, levels = c("Youngest", "Middle", "Oldest"))
+
+ggplot(mydata, aes(ToM, color = age.group)) + geom_density(adjust = 1)
+ggplot(mydata, aes(ToM, fill = age.group)) + geom_density(adjust = 1, alpha = .5)
+ggplot(mydata, aes(ToM, linetype = age.group)) + geom_density(adjust = 1)
+ggplot(mydata, aes(age.group, ToM, fill = age.group)) + geom_boxplot()
+```
+
+4. Create a bar plot of the cell means of some variable. Steps:
+   - Find a numerical variable and a grouping factor (this can be the same as those chosen above).
+   - Get the mean value of the numerical variable, broken down by the factor.  
+   - Plot this new aggregated data frame, using the "bar" geom.
+   
+```{r}
+library(dplyr)
+
+mydata.agg <- group_by(mydata, age.group) %>% summarize(mean.ToM = mean(ToM))
+mydata.agg 
+ggplot(mydata.agg, aes(age.group, mean.ToM)) + geom_bar(stat = "identity")
+```
+   
+5. Create a bar plot that gets means broken down by TWO grouping factors.  For example, if Factor A has levels "red" and "blue" and Factor B has levels "north" and "south", get the cell means of "red north", "red south", "blue north", and "blue south."  
+   - Use the dplyr methods to get these means into a data frame format.
+   - Use the "bar" geom, but map the two variables to different graphical dimension.  One should be the "x" value, but the other should be mapped to some other visual property.
+
+```{r}
+mydata.agg2 <- group_by(mydata, age.group, Gender) %>% summarize(mean.ToM = mean(ToM))
+mydata.agg2
+ggplot(mydata.agg2, aes(age.group, mean.ToM, fill = Gender)) + geom_bar(stat = "identity", position=position_dodge())
+```
+
+6. Output all of the plots above (from problems 1-6) as a single PDF.
+
+```{r}
+pdf("hw6_plots_dra.pdf")
+ggplot(mydata, aes(ToM)) + geom_histogram(binwidth = 1)
+ggplot(mydata, aes(ToM)) + geom_histogram(binwidth = .5)
+ggplot(mydata, aes(ToM)) + geom_histogram(binwidth = .1)
+ggplot(mydata, aes(ToM)) + geom_density(adjust = 1)
+ggplot(mydata, aes(ToM)) + geom_density(adjust = .5)
+ggplot(mydata, aes(ToM)) + geom_density(adjust = .1)
+
+ggplot(mydata, aes(sqrt(ToM))) + geom_histogram(binwidth = .1)
+ggplot(mydata, aes(log(ToM))) + geom_histogram(binwidth = .05)
+ggplot(mydata, aes((ToM)^2)) + geom_histogram(binwidth = 10)
+
+ggplot(mydata, aes(ToM, color = age.group)) + geom_density(adjust = 1)
+ggplot(mydata, aes(ToM, fill = age.group)) + geom_density(adjust = 1, alpha = .5)
+ggplot(mydata, aes(ToM, linetype = age.group)) + geom_density(adjust = 1)
+ggplot(mydata, aes(age.group, ToM, fill = age.group)) + geom_boxplot()
+
+ggplot(mydata.agg, aes(age.group, mean.ToM)) + geom_bar(stat = "identity")
+
+ggplot(mydata.agg2, aes(age.group, mean.ToM, fill = Gender)) + geom_bar(stat = "identity", position=position_dodge())
+
+dev.off()
+
+```
+
+7. Is there a better type of visualization for your data?  What numbers would you like to be able to visualize better?  Be as explicit as possible, and write some "pseudo-code" to ilustrate what you think you would like.
+
+
+Once I calculate the multivariate linear regression on ToM, I would like to plot the regression line, with the observed ToM scores on one axis and the ToM predicted by the model on the other axis, showing the 95% confidence interval with geom_smooth(method = "lm"). It would also be useful to plot the lines separated by the factor of age group, and again by gender. 
+```{r}
+# separated by age.group
+# ggplot(mydata, aes(x = observed ToM, y = predicted ToM, color = age.group)) + 
+# geom_point(size = 4) + 
+# geom_smooth(method = "lm")
+
+# separated by Gender
+# ggplot(mydata, aes(x = observed ToM, y = predicted ToM, color = Gender)) + 
+# geom_point(size = 4) + 
+# geom_smooth(method = "lm")
+```
+
+
+
