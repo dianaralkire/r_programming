@@ -1,0 +1,82 @@
+---
+title: "Day 7 Homework"
+output: html_document
+---
+
+Find three relationships in your data.  For each relationship, do the following:
+
+####1. Verbally articulate the relationship you want to examine.
+
+**a.** relationship between Reading the Mind in the Eyes ("mind.eyes") and Theory of Mind Inventory ("ToM")
+
+**b.** relationship between age and mind.eyes, with gender and full IQ (FIQ) also represented
+
+**c.** relationship between age and Strange Stories Total Score ("strange.stories.total"), with gender also represented
+
+####2. Verbally identify what variables you want to map to each graphical dimension.
+
+**a.** ToM on the x-axis, mind.eyes on the y-axis
+
+**b.** age on the x-axis, mind.eyes on the y-axis, each gender corresponds to a different color, and FIQ represented by point size
+
+**c.** age on the x-axis, strange.stories.total on the y-axis, each gender corresponds to a different color
+
+####3. Reshape your data as needed.
+
+reshaping not needed; data saved as "mydata.RData" and uploaded to my GitHub repository
+```{r}
+load("mydata.RData")
+```
+
+
+####4. Use ggplot2 to create your graphs.
+
+```{r}
+library(ggplot2)
+
+# a. ToM X mind.eyes 
+scatterplot.a <- ggplot(mydata, aes(ToM, mind.eyes)) + geom_point()
+scatterplot.a
+
+# b. age X mind.eyes
+scatterplot.b <- ggplot(mydata, aes(age, mind.eyes)) + geom_point(aes(color = gender, size = FIQ))
+scatterplot.b
+
+# c. age X strange.stories.total
+scatterplot.c <- ggplot(mydata, aes(age, strange.stories.total)) + geom_point(aes(color = gender), size = 3)
+scatterplot.c
+```
+
+####5. Fiddle with colors, axis labels, themes, etc. until the plot looks "publication ready" to you.  Try to change at least one thing per plot.
+
+```{r}
+library(scales)
+
+# a. ToM X mind.eyes 
+scatterplot.a + xlab("Theory of Mind Inventory") + scale_y_continuous(name = "Reading the Mind in the Eyes", labels = percent) + theme_minimal() 
+
+# b. age X mind.eyes
+scatterplot.b + scale_x_continuous(name = "Age (years)", breaks = seq(6, 13.5, .5)) + scale_y_continuous(name = "Reading the Mind in the Eyes", labels = percent) + theme_minimal() + scale_color_manual(values = c("springgreen4", "orange"), name = "Gender") + geom_smooth(color = "black", linetype = 3)
+
+# c. age X strange.stories.total
+
+scatterplot.c + scale_x_continuous(name = "Age (years)", breaks = seq(6, 13.5, .5)) + scale_y_continuous(name = "Strange Stories") + theme_minimal() + scale_color_manual(values = c("springgreen4", "orange"), name = "Gender") + geom_smooth(method = "lm", color = "black", linetype = 3) 
+
+```
+
+
+####6. Save all plots to a format that you could use in a paper.  HINT: PNG works well for pasting into Word documents.
+```{r}
+png("plot-a.png")
+scatterplot.a + xlab("Theory of Mind Inventory") + scale_y_continuous(name = "Reading the Mind in the Eyes", labels = percent) + theme_minimal() 
+dev.off()
+
+png("plot-b.png")
+scatterplot.b + scale_x_continuous(name = "Age (years)", breaks = seq(6, 13.5, .5)) + scale_y_continuous(name = "Reading the Mind in the Eyes", labels = percent) + theme_minimal() + scale_color_manual(values = c("springgreen4", "orange"), name = "Gender") + geom_smooth(color = "black", linetype = 3)
+dev.off()
+
+png("plot-c.png")
+scatterplot.c + scale_x_continuous(name = "Age (years)", breaks = seq(6, 13.5, .5)) + scale_y_continuous(name = "Strange Stories") + theme_minimal() + scale_color_manual(values = c("springgreen4", "orange"), name = "Gender") + geom_smooth(method = "lm", color = "black", linetype = 3) 
+dev.off()
+```
+
