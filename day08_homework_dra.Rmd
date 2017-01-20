@@ -1,0 +1,61 @@
+---
+title: "Day 8 Homework"
+output: html_document
+---
+```{r}
+load("mydata.RData") # same file that I uploaded on 1/18/17
+#I found extra spaces in two of the columns so I'm fixing them here by removing the double space and then replacing spaces with "." to avoid similar problems:
+names(mydata) <- gsub("  ", " ", names(mydata))
+names(mydata) <- gsub(" ", "\\.", names(mydata))
+```
+
+Find two repetitive things that you would like to be able to do with your data.  This can be something having to do with coding variables, or saving plots, or running an analysis multiple times on different subsets, etc. etc.  Just try to find something where you would normally need to "copy and paste" sections of code, varying only one or two things.  Figure out how to use a loop to accomplish this.  
+
+For BOTH of these things, take the following steps:
+
+####1. Articulate what you want to do (verbally)
+
+**a.** For each of the Strange Stories transcripts, I want to count the number of words in the response and add these values to a new column for each story (from story 1 to story 11).
+
+**b.** Create a new column that contains the mean number of words for each subject across all 11 stories.
+
+####2. Give some code that illustrates the "copy and paste" method.  This can just show a couple of steps.  That is, if you would be running through a bunch of iterations, just copy and paste a couple of times, not everything.
+```{r}
+mydata2 <- mydata
+
+### a ###
+
+mydata2$story.1.words[1] <- length(strsplit(mydata2$Story.1.Transcript[1],' ')[[1]])
+mydata2$story.1.words[2] <- length(strsplit(mydata2$Story.1.Transcript[2],' ')[[1]])
+# ... etc. through all 32 rows
+# then iterate through the 11 stories
+mydata2$story.2.words[1] <- length(strsplit(mydata2$Story.2.Transcript[1],' ')[[1]])
+mydata2$story.2.words[2] <- length(strsplit(mydata2$Story.2.Transcript[2],' ')[[1]])
+# ... etc. 
+
+### b ###
+
+mydata2$mean.words[1] <- sum(mydata2[1, 32:42])/11
+mydata2$mean.words[2] <- sum(mydata2[2, 32:42])/11
+# ... etc. through all 32 rows
+```
+
+####3. Work this code into a loop format, so that no copy & paste is neccesary.  You will need to set up a "counter" variable that cycles through various values (which do not have to be numeric), changing with every pass through the loop.  But you may also need to make other changes to your code to accommodate the loop.
+```{r}
+### a ###
+
+for(storynumber in names(mydata[ , 21:31])) {
+ for(subject in 1:nrow(mydata)) {
+    mydata[subject, paste(storynumber, "words", sep = ".")] <- length(strsplit(mydata[subject, storynumber],' ')[[1]])
+  }
+}
+
+### b ###
+
+for(subject in 1:nrow(mydata)) {
+  mydata$mean.words[subject] <- sum(mydata[subject, 32:42])/11
+}
+```
+
+As usual, send me your .Rmd file with any data I need to replicate your results.
+ 
